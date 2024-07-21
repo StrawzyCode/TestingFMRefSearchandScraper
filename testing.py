@@ -11,7 +11,6 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Initialize the WebDriver once and reuse it
 def init_driver():
     options = webdriver.ChromeOptions()
     options.add_argument('--disable-gpu')
@@ -25,26 +24,23 @@ def search_player(driver, player_name):
     search_box = driver.find_element(By.CSS_SELECTOR, "input[type='search']")
     search_box.send_keys(player_name)
     search_box.send_keys(Keys.RETURN)
-    time.sleep(3)  # Adjust sleep as necessary
+    time.sleep(3)  
 
 def process_results(driver, player_name):
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     h2_tags = soup.find_all('h2')
     
-    # Find all potential matches based on h2 tags
     exact_matches = [tag for tag in h2_tags if tag.string and tag.string.strip() == player_name]
     
     if len(h2_tags) == 0:
         return "Not in FM24"
     elif len(exact_matches) == 1:
-        # Single exact match, get the FMRef ID from the button
         button = exact_matches[0].find_next('button', class_='fm-id')
         if button:
             return button.text.strip()
         else:
             return "Free Agent/No Team"
     elif len(exact_matches) > 1:
-        # Multiple exact matches, try to find a unique match
         for match in exact_matches:
             button = match.find_next('button', class_='fm-id')
             if button:
@@ -145,7 +141,7 @@ def main():
             'FMRef ID': []
         }
 
-        for page in range(1, 11):  # Get the last 10 pages
+        for page in range(1, 11): 
             players, transfermarkt_ids, team_lefts, team_joineds, fees, datetimes = extract_data_from_page(base_url.format(page), headers)
             
             for player, transfermarkt_id, team_left, team_joined, fee, datetime_retrieved in zip(players, transfermarkt_ids, team_lefts, team_joineds, fees, datetimes):

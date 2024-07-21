@@ -15,15 +15,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 def init_driver():
     options = webdriver.ChromeOptions()
     options.add_argument('--disable-gpu')
-    options.add_argument('--headless')  # Run headless to speed up
+    options.add_argument('--headless') 
     driver = webdriver.Chrome(options=options)
     return driver
 
 def search_fmref_id(driver, fmref_id):
     url = f"https://fmref.com/player/{fmref_id}"
     driver.get(url)
-    time.sleep(3)  # Adjust sleep as necessary
-
+    time.sleep(3)  
 def extract_team_info(soup):
     team_tag = soup.find('a', href=lambda href: href and 'team' in href)
     if team_tag:
