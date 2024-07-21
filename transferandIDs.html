@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfers Table</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .info {
+            margin-bottom: 20px;
+        }
+    </style>
+    <script>
+        async function fetchData() {
+            try {
+                console.log('Fetching data...');
+                const response = await fetch('transfers.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Data fetched:', data);
+                return data;
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                return [];
+            }
+        }
+
+        function wordsMatch(words1, words2) {
+            const wordSet1 = new Set(words1.toLowerCase().split(/\s+/));
+            const wordSet2 = new Set(words2.toLowerCase().split(/\s+/));
+            for (const word of wordSet1) {
+                if (wordSet2.has(word)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function generateTable(data) {
+            data.sort((a, b) => new Date(b["Datetime Retrieved"]) - new Date(a["Datetime Retrieved"]));
+
+            const table = document.createElement('table');
+            const header = table.createTHead();
+            const headerRow = header.insertRow(0);
+            const headers = ['Player', 'Transfermarkt ID', 'Team Left', 'Team Joined', 'Fee', 'Datetime Retrieved', 'FMRef ID', 'FMRef Team', 'Match Status'];
+            headers.forEach((headerText, index) => {
+                const cell = headerRow.insertCell(index);
+                cell.textContent = headerText;
+            });
+
+            const tbody = table.createTBody();
+            data.forEach((item) => {
+                const row = tbody.insertRow();
+                headers.forEach((headerText, index) => {
+                    const cell = row.insertCell(index);
+                    if (headerText === 'Team Left' && !item[headerText]) {
+                        cell.textContent = 'Without Club';
+                    } else if (headerText === 'Team Joined' && !item[headerText]) {
+                        cell.textContent = 'RETIRED';
+                    } else if (headerText === 'FMRef Team') {
+                        cell.textContent = item[headerText] || 'N/A';
+                    } else if (headerText === 'Match Status') {
+                        const matchStatus = wordsMatch(item['Team Left'] || '', item['FMRef Team'] || '') ? 'Match' : 'No Match';
+                        cell.textContent = matchStatus;
+                        cell.style.backgroundColor = matchStatus === 'Match' ? 'green' : 'red';
+                        cell.style.color = 'white';
+                    } else {
+                        cell.textContent = item[headerText] || 'N/A';
+                    }
+                });
+            });
+
+            return table;
+        }
+
+        function updateTable() {
+            fetchData().then(data => {
+                if (data.length === 0) {
+                    console.error('No data found.');
+                    document.getElementById('table-container').innerHTML = 'No data available.';
+                    document.getElementById('entry-count').textContent = 'Entries: 0';
+                    return;
+                }
+
+                const tableContainer = document.getElementById('table-container');
+                tableContainer.innerHTML = '';
+                const table = generateTable(data);
+                tableContainer.appendChild(table);
+
+                const updatedTime = new Date().toLocaleString();
+                document.getElementById('last-updated').textContent = `Last Updated: ${updatedTime}`;
+                document.getElementById('entry-count').textContent = `Entries: ${data.length}`;
+            }).catch(error => {
+                console.error('Error updating table:', error);
+            });
+        }
+
+        window.onload = function() {
+            updateTable();
+            setInterval(updateTable, 60000); 
+        }
+    </script>
+</head>
+<body>
+    <div class="info" id="entry-count">Entries: Loading...</div>
+    <div class="info" id="last-updated">Last Updated: Loading...</div>
+    <div id="table-container">Loading table...</div>
+</body>
+</html>
+
+
+<!-- python -m http.server -->
